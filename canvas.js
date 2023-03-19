@@ -23,7 +23,7 @@ const click = {
 window.addEventListener("click", (event) => {
   click.x = event.x;
   click.y = event.y;
-  console.log(click.x, click.y);
+  init();
 });
 
 window.addEventListener("resize", () => {
@@ -33,6 +33,9 @@ window.addEventListener("resize", () => {
 });
 
 const colorArray = ["#011627", "#FF0022", "#41EAD4", "#B91372"];
+
+const gravity = 1;
+const friction = 0.8;
 
 function Circle(x, y, dx, dy, radius) {
   this.x = x;
@@ -46,49 +49,74 @@ function Circle(x, y, dx, dy, radius) {
   this.draw = function () {
     c.beginPath();
     c.arc(this.x, this.y, this.radius, 0, Math.PI * 2, false);
-    c.strokeStyle = this.color;
-    c.stroke();
     c.fillStyle = this.color;
     c.fill();
+    c.stroke();
+    c.closePath;
   };
 
   this.update = function () {
-    if (this.x + this.radius > innerWidth || this.x - this.radius < 0) {
+    // bouncing balls
+
+    if (this.y + this.radius + this.dy > canvas.height) {
+      this.dy = -this.dy * friction;
+    } else {
+      this.dy += gravity;
+    }
+    if (this.x + this.radius > canvas.width || this.x - this.radius < 0) {
       this.dx = -this.dx;
     }
-    if (this.y + this.radius > innerHeight || this.y - this.radius < 0) {
-      this.dy = -this.dy;
+    if (this.y + radius === canvas.height) {
+      this.dx === 0;
     }
     this.x += this.dx;
     this.y += this.dy;
-    if (
-      mouse.x - this.x < 50 &&
-      mouse.x - this.x > -50 &&
-      mouse.y - this.y < 50 &&
-      mouse.y - this.y > -50
-    ) {
-      if (this.radius < maxRadius) {
-        this.radius += 1;
-      }
-    } else if (this.radius > this.minRadius) {
-      this.radius -= 1;
-    }
     this.draw();
   };
 }
 
-var circleArray = [];
+// moving balls around screen w/edge detection
 
+// if (this.x + this.radius > innerWidth || this.x - this.radius < 0) {
+//   this.dx = -this.dx;
+// }
+// if (this.y + this.radius > innerHeight || this.y - this.radius < 0) {
+//   this.dy = -this.dy;
+// }
+// this.x += this.dx;
+// this.y += this.dy;
+// if (
+//   mouse.x - this.x < 50 &&
+//   mouse.x - this.x > -50 &&
+//   mouse.y - this.y < 50 &&
+//   mouse.y - this.y > -50
+// ) {
+//   if (this.radius < maxRadius) {
+//     this.radius += 1;
+//   }
+// } else if (this.radius > this.minRadius) {
+//   this.radius -= 1;
+// }
+
+let circleArray;
+
+let circle1;
+let circle2;
 const init = () => {
-  circleArray = [];
-  for (let i = 0; i < 100; i++) {
-    var radius = Math.floor(Math.random() * 5);
-    var x = Math.random() * (innerWidth - radius * 2) + radius;
-    var y = Math.random() * (innerHeight - radius * 2) + radius;
-    var dx = (Math.random() - 0.5) * 5;
-    var dy = (Math.random() - 0.5) * 5;
-    circleArray.push(new Circle(x, y, dx, dy, radius));
-  }
+  circle1 = new Circle(300, 300, 100, "black");
+  circle2 = new Circle(undefined, undefined, 30, "red");
+
+  // generate multiple circles
+
+  // circleArray = [];
+  // for (let i = 0; i < 500; i++) {
+  //   var radius = Math.floor(Math.random() * 30);
+  //   var x = Math.random() * (innerWidth - radius * 2) + radius;
+  //   var y = Math.random() * (innerHeight - radius * 2) + radius;
+  //   var dx = (Math.random() - 0.5) * 5;
+  //   var dy = (Math.random() - 0.5) * 5;
+  //   circleArray.push(new Circle(x, y, dx, dy, radius));
+  // }
 };
 
 const animate = () => {
