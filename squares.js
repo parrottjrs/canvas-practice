@@ -1,9 +1,10 @@
 const canvas = document.querySelector("canvas");
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
+canvas.width = innerWidth;
+canvas.height = innerHeight;
 const c = canvas.getContext("2d");
-const image = new Image();
-image.src = "./cork.jpeg";
+
+const cork = new Image();
+cork.src = "images/cork.jpeg";
 
 // variables
 
@@ -13,8 +14,6 @@ const mouse = {
 };
 
 let isDraggable = false;
-
-let square;
 
 let start = {
   x: undefined,
@@ -26,17 +25,23 @@ let dy = undefined;
 
 // objects
 
-function Square(x, y, width, height) {
+function Square(x, y, color, title) {
   this.x = x;
   this.y = y;
-  this.width = width;
-  this.height = height;
-  this.color = "#fffa5c";
+  this.width = 100;
+  this.height = 100;
+  this.color = color;
 
   this.draw = () => {
     c.beginPath();
     c.fillStyle = this.color;
     c.fillRect(this.x, this.y, this.width, this.height);
+    c.font = "20px arial";
+    c.fillStyle = hex2rgb(this.color);
+    c.fillText(title, this.x + this.width / 16, this.y + this.height / 2);
+    c.fillText("+", this.x + 3, this.y + 97);
+    c.font = "17px arial";
+    c.fillText("x", this.x + 87, this.y + 95);
   };
   this.update = () => {
     if (this.x < 0) {
@@ -55,7 +60,55 @@ function Square(x, y, width, height) {
   };
 }
 
-// functions
+const getNotes = () => {
+  const maybeNotes = localStorage.getItem("notes");
+
+  if (maybeNotes === null) {
+    return [];
+  } else {
+    return JSON.parse(maybeNotes);
+  }
+};
+
+let notes = getNotes();
+
+const saveNote = (updatedNote) => {
+  const existing = notes.find((note) => note.id == updatedNote.id);
+
+  if (updatedNote.title === "") {
+    for (let i = 0; i < updatedNote.content.length; i++) {
+      let preview = updatedNote.content;
+      updatedNote.title = updatedNote.title + `${preview[i]}`;
+    }
+    updatedNote.title = `${updatedNote.title}...`;
+  }
+
+  if (existing) {
+    if (new Date(existing.updated) <= new Date(updatedNote.updated)) {
+      existing.title = updatedNote.title;
+      existing.content = updatedNote.content;
+      existing.color = updatedNote.color;
+      existing.updated = updatedNote.updated;
+    }
+  } else {
+    updatedNote.id = Math.floor(Math.random() * 100000);
+    notes.unshift(updatedNote);
+  }
+  localStorage.setItem("notes", JSON.stringify(notes));
+};
+
+const hex2rgb = (hex) => {
+  const rgb = [
+    `0x${hex[1]}${hex[2]}` | 0,
+    `0x${hex[3]}${hex[4]}` | 0,
+    `0x${hex[5]}${hex[6]}` | 0,
+  ];
+  if (rgb[0] + rgb[1] + rgb[2] <= 150) {
+    return "#ffffff";
+  } else {
+    return "#000000";
+  }
+};
 
 const getDistance = (x1, x2, width, y1, y2, height) => {
   const distanceX1 = x2 - (x1 + width);
@@ -135,13 +188,19 @@ canvas.onmouseout = mouseOut;
 canvas.onmousemove = mouseMove;
 
 // implementation
+
 let squareArray = [];
 
-for (let i = 0; i < 10; i++) {
+for (let i = 0; i < notes.length; i++) {
+  notes.map = (note) => {};
+
   let x = Math.floor(Math.random() * innerWidth);
   let y = Math.floor(Math.random() * innerHeight);
-  const width = 50;
-  const height = 50;
+  let width = 100;
+  let height = 100;
+  let color = notes[i].color;
+  let title = notes[i].title;
+
   if (x < 0 || x + width > innerWidth || y < 0 || y + height > innerHeight) {
     x = Math.floor(Math.random() * innerWidth);
     y = Math.floor(Math.random() * innerHeight);
@@ -156,16 +215,17 @@ for (let i = 0; i < 10; i++) {
         squareArray[j].y,
         height
       );
-      if (distances.distanceX < 0 && distances.distanceX2 < 0) {
+      if (distances.distanceX1 < 0 && distances.distanceX2 < 0) {
         x = Math.floor(Math.random() * innerWidth);
-      } else if (distances.distanceY < 0 && distanceY2 < 0) {
+      } else if (distances.distanceY1 < 0 && distances.distanceY2 < 0) {
         y = Math.floor(Math.random() * innerHeight);
 
         j = -1;
       }
     }
   }
-  squareArray.push(new Square(x, y, width, height));
+
+  squareArray.push(new Square(x, y, color, title));
 }
 
 const animate = () => {
@@ -173,9 +233,11 @@ const animate = () => {
 
   c.clearRect(0, 0, innerWidth, innerHeight);
 
-  c.drawImage(image, 0, 0, innerWidth, innerHeight);
+  c.drawImage(cork, 0, 0, innerWidth, innerHeight);
 
-  for (let i = 0; i < squareArray.length; i++) squareArray[i].update();
+  for (let i = 0; i < squareArray.length; i++) {
+    squareArray[i].update();
+  }
 };
 
 animate();
