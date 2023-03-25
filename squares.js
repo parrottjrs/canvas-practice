@@ -4,7 +4,7 @@ canvas.height = innerHeight;
 const c = canvas.getContext("2d");
 
 const cork = new Image();
-cork.src = "images/cork.jpeg";
+cork.src = "./cork.jpeg";
 
 // variables
 
@@ -14,6 +14,7 @@ const mouse = {
 };
 
 let isDraggable = false;
+let isResizable = false;
 
 let start = {
   x: undefined,
@@ -25,23 +26,34 @@ let dy = undefined;
 
 // objects
 
-function Square(x, y, color, title) {
+function Square(x, y, color, title, content) {
   this.x = x;
   this.y = y;
   this.width = 100;
   this.height = 100;
   this.color = color;
+  this.editing = false;
 
   this.draw = () => {
-    c.beginPath();
-    c.fillStyle = this.color;
-    c.fillRect(this.x, this.y, this.width, this.height);
-    c.font = "20px arial";
-    c.fillStyle = hex2rgb(this.color);
-    c.fillText(title, this.x + this.width / 16, this.y + this.height / 2);
-    c.fillText("+", this.x + 3, this.y + 97);
-    c.font = "17px arial";
-    c.fillText("x", this.x + 87, this.y + 95);
+    if (this.editing) {
+      c.beginPath();
+      c.fillStyle = this.color;
+      c.fillRect(this.x, this.y, this.width, this.height);
+      c.strokeRect(this.x, this.y, this.width, this.height);
+      c.font = "20px arial";
+      c.fillStyle = hex2rgb(this.color);
+      c.fillText("-", this.x + 3, this.y + 17);
+      c.fillText(title, this.x + this.width / 4, this.y + 25);
+      c.fillText(content, this.x + 10, this.y + this.height / 4);
+    } else {
+      c.beginPath();
+      c.fillStyle = this.color;
+      c.fillRect(this.x, this.y, this.width, this.height);
+      c.strokeRect(this.x, this.y, this.width, this.height);
+      c.font = "20px arial";
+      c.fillStyle = hex2rgb(this.color);
+      c.fillText("+", this.x + 3, this.y + 17);
+    }
   };
   this.update = () => {
     if (this.x < 0) {
@@ -127,10 +139,37 @@ const isInSquare = (x, y) => {
       y < squareArray[i].y + squareArray[i].height &&
       y > squareArray[i].y
     ) {
+      return true;
+    }
+  return false;
+};
+
+const isOnResize = (x, y) => {
+  for (let i = 0; i < squareArray.length; i++)
+    if (
+      x < squareArray[i].x + 14 &&
+      x > squareArray[i].x + 4 &&
+      y < squareArray[i].y + 15 &&
+      y > squareArray[i].y + 5
+    ) {
       square = squareArray[i];
       return true;
     }
   return false;
+};
+
+const maximize = (square) => {
+  square.editing = true;
+  square.width = 400;
+  square.height = 400;
+  square.x = innerWidth / 2 - square.width / 2;
+  square.y = innerHeight / 2 - square.height / 2;
+};
+
+const minimize = (square) => {
+  square.editing = false;
+  square.width = 100;
+  square.height = 100;
 };
 
 const mouseDown = (event) => {
@@ -139,6 +178,9 @@ const mouseDown = (event) => {
   start.x = event.clientX;
   start.y = event.clientY;
 
+  if (isOnResize(start.x, start.y)) {
+    isResizable = true;
+  }
   if (isInSquare(start.x, start.y)) {
     isDraggable = true;
   }
@@ -149,6 +191,15 @@ const mouseUp = (event) => {
     return;
   }
   event.preventDefault();
+  start.x = event.clientX;
+  start.y = event.clientY;
+
+  if (isResizable && isInSquare(start.x, start.y)) {
+    if (square.editing) {
+      minimize(square);
+    } else maximize(square);
+  }
+  isResizable = false;
   isDraggable = false;
 };
 
@@ -157,11 +208,12 @@ const mouseOut = (event) => {
     return;
   }
   event.preventDefault();
+  isResizable = false;
   isDraggable = false;
 };
 
 const mouseMove = (event) => {
-  if (!isDraggable) {
+  if (!isDraggable || isResizable) {
     return;
   } else {
     event.preventDefault();
@@ -200,6 +252,7 @@ for (let i = 0; i < notes.length; i++) {
   let height = 100;
   let color = notes[i].color;
   let title = notes[i].title;
+  let content = notes[i].content;
 
   if (x < 0 || x + width > innerWidth || y < 0 || y + height > innerHeight) {
     x = Math.floor(Math.random() * innerWidth);
@@ -225,18 +278,24 @@ for (let i = 0; i < notes.length; i++) {
     }
   }
 
-  squareArray.push(new Square(x, y, color, title));
+  squareArray.push(new Square(x, y, color, title, content));
 }
 
 const animate = () => {
   requestAnimationFrame(animate);
 
   c.clearRect(0, 0, innerWidth, innerHeight);
-
   c.drawImage(cork, 0, 0, innerWidth, innerHeight);
 
   for (let i = 0; i < squareArray.length; i++) {
     squareArray[i].update();
+  }
+  for (let i = 0; i < squareArray.length; i++) {
+    if (squareArray[i].editing) {
+      c.clearRect(0, 0, innerWidth, innerHeight);
+      c.drawImage(cork, 0, 0, innerWidth, innerHeight);
+      squareArray[i].update();
+    }
   }
 };
 
