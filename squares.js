@@ -1,36 +1,78 @@
-const canvas = document.querySelector("canvas");
+const body = document.querySelector("body");
+const canvas = document.createElement("canvas");
+body.append(canvas);
 canvas.width = innerWidth;
 canvas.height = innerHeight;
 const c = canvas.getContext("2d");
-
 const cork = new Image();
 cork.src = "./cork.jpeg";
 
-// variables
+const getNotes = () => {
+  const maybeNotes = localStorage.getItem("notes");
 
-const mouse = {
-  x: innerWidth / 2,
-  y: innerHeight / 2,
+  if (maybeNotes === null) {
+    return [];
+  } else {
+    return JSON.parse(maybeNotes);
+  }
 };
 
-let isDraggable = false;
-let isResizable = false;
+let notes = getNotes();
 
-let start = {
-  x: undefined,
-  y: undefined,
+const saveNote = (updatedNote) => {
+  const existing = notes.find((note) => note.id == updatedNote.id);
+
+  if (updatedNote.title === "") {
+    for (let i = 0; i < updatedNote.content.length; i++) {
+      let preview = updatedNote.content;
+      updatedNote.title = updatedNote.title + `${preview[i]}`;
+    }
+    updatedNote.title = `${updatedNote.title}...`;
+  }
+
+  if (existing) {
+    if (new Date(existing.updated) <= new Date(updatedNote.updated)) {
+      existing.title = updatedNote.title;
+      existing.content = updatedNote.content;
+      existing.color = updatedNote.color;
+      existing.updated = updatedNote.updated;
+    }
+  } else {
+    updatedNote.id = Math.floor(Math.random() * 100000);
+    notes.unshift(updatedNote);
+  }
+  localStorage.setItem("notes", JSON.stringify(notes));
+  changePage("home");
 };
 
-let dx = undefined;
-let dy = undefined;
+const deleteNote = (noteToDelete) => {
+  notes = notes.filter((note) => note.id != noteToDelete.id);
 
-// objects
+  localStorage.setItem("notes", JSON.stringify(notes));
+  changePage("home");
+};
 
-function Square(x, y, color, title, content) {
+const hex2rgb = (hex) => {
+  const rgb = [
+    `0x${hex[1]}${hex[2]}` | 0,
+    `0x${hex[3]}${hex[4]}` | 0,
+    `0x${hex[5]}${hex[6]}` | 0,
+  ];
+  if (rgb[0] + rgb[1] + rgb[2] <= 150) {
+    return "#ffffff";
+  } else {
+    return "#000000";
+  }
+};
+
+//Note Creation and Event Handling
+// objects/variables
+
+function Square(x, y, width, height, color, title, content) {
   this.x = x;
   this.y = y;
-  this.width = 100;
-  this.height = 100;
+  this.width = width;
+  this.height = height;
   this.color = color;
   this.editing = false;
 
@@ -72,55 +114,23 @@ function Square(x, y, color, title, content) {
   };
 }
 
-const getNotes = () => {
-  const maybeNotes = localStorage.getItem("notes");
-
-  if (maybeNotes === null) {
-    return [];
-  } else {
-    return JSON.parse(maybeNotes);
-  }
+const mouse = {
+  x: innerWidth / 2,
+  y: innerHeight / 2,
 };
 
-let notes = getNotes();
+let isDraggable = false;
+let isResizable = false;
 
-const saveNote = (updatedNote) => {
-  const existing = notes.find((note) => note.id == updatedNote.id);
-
-  if (updatedNote.title === "") {
-    for (let i = 0; i < updatedNote.content.length; i++) {
-      let preview = updatedNote.content;
-      updatedNote.title = updatedNote.title + `${preview[i]}`;
-    }
-    updatedNote.title = `${updatedNote.title}...`;
-  }
-
-  if (existing) {
-    if (new Date(existing.updated) <= new Date(updatedNote.updated)) {
-      existing.title = updatedNote.title;
-      existing.content = updatedNote.content;
-      existing.color = updatedNote.color;
-      existing.updated = updatedNote.updated;
-    }
-  } else {
-    updatedNote.id = Math.floor(Math.random() * 100000);
-    notes.unshift(updatedNote);
-  }
-  localStorage.setItem("notes", JSON.stringify(notes));
+let start = {
+  x: undefined,
+  y: undefined,
 };
 
-const hex2rgb = (hex) => {
-  const rgb = [
-    `0x${hex[1]}${hex[2]}` | 0,
-    `0x${hex[3]}${hex[4]}` | 0,
-    `0x${hex[5]}${hex[6]}` | 0,
-  ];
-  if (rgb[0] + rgb[1] + rgb[2] <= 150) {
-    return "#ffffff";
-  } else {
-    return "#000000";
-  }
-};
+let dx = undefined;
+let dy = undefined;
+
+// calculates distance between randomly placed squares
 
 const getDistance = (x1, x2, width, y1, y2, height) => {
   const distanceX1 = x2 - (x1 + width);
@@ -131,6 +141,8 @@ const getDistance = (x1, x2, width, y1, y2, height) => {
   return { distanceX1, distanceX2, distanceY1, distanceY2 };
 };
 
+// detects mouse activity in square
+
 const isInSquare = (x, y) => {
   for (let i = 0; i < squareArray.length; i++)
     if (
@@ -139,10 +151,13 @@ const isInSquare = (x, y) => {
       y < squareArray[i].y + squareArray[i].height &&
       y > squareArray[i].y
     ) {
+      square = squareArray[i];
       return true;
     }
   return false;
 };
+
+// detects mouse activity on note resize button
 
 const isOnResize = (x, y) => {
   for (let i = 0; i < squareArray.length; i++)
@@ -158,19 +173,22 @@ const isOnResize = (x, y) => {
   return false;
 };
 
+// maximizes note
+
 const maximize = (square) => {
   square.editing = true;
-  square.width = 400;
-  square.height = 400;
-  square.x = innerWidth / 2 - square.width / 2;
-  square.y = innerHeight / 2 - square.height / 2;
+  pages.note.create(square);
 };
 
+// minimizes note
+
 const minimize = (square) => {
-  square.editing = false;
   square.width = 100;
   square.height = 100;
+  pages.home.create();
 };
+
+// mouse event handling for note squares
 
 const mouseDown = (event) => {
   event.preventDefault();
@@ -239,47 +257,7 @@ canvas.onmouseup = mouseUp;
 canvas.onmouseout = mouseOut;
 canvas.onmousemove = mouseMove;
 
-// implementation
-
-let squareArray = [];
-
-for (let i = 0; i < notes.length; i++) {
-  notes.map = (note) => {};
-
-  let x = Math.floor(Math.random() * innerWidth);
-  let y = Math.floor(Math.random() * innerHeight);
-  let width = 100;
-  let height = 100;
-  let color = notes[i].color;
-  let title = notes[i].title;
-  let content = notes[i].content;
-
-  if (x < 0 || x + width > innerWidth || y < 0 || y + height > innerHeight) {
-    x = Math.floor(Math.random() * innerWidth);
-    y = Math.floor(Math.random() * innerHeight);
-  }
-  if (i !== 0) {
-    for (let j = 0; j < squareArray.length; j++) {
-      const distances = getDistance(
-        x,
-        squareArray[j].x,
-        width,
-        y,
-        squareArray[j].y,
-        height
-      );
-      if (distances.distanceX1 < 0 && distances.distanceX2 < 0) {
-        x = Math.floor(Math.random() * innerWidth);
-      } else if (distances.distanceY1 < 0 && distances.distanceY2 < 0) {
-        y = Math.floor(Math.random() * innerHeight);
-
-        j = -1;
-      }
-    }
-  }
-
-  squareArray.push(new Square(x, y, color, title, content));
-}
+// animate function
 
 const animate = () => {
   requestAnimationFrame(animate);
@@ -290,13 +268,89 @@ const animate = () => {
   for (let i = 0; i < squareArray.length; i++) {
     squareArray[i].update();
   }
-  for (let i = 0; i < squareArray.length; i++) {
-    if (squareArray[i].editing) {
-      c.clearRect(0, 0, innerWidth, innerHeight);
-      c.drawImage(cork, 0, 0, innerWidth, innerHeight);
-      squareArray[i].update();
-    }
-  }
 };
 
-animate();
+// page creation
+
+const pages = {
+  home: {
+    create() {
+      squareArray = [];
+      const createButton = new Square(50, 50, 100, 100, "#fffa5c");
+      squareArray.push(createButton);
+
+      for (let i = 0; i < notes.length; i++) {
+        notes.map = (note) => {};
+
+        let x = Math.floor(Math.random() * innerWidth);
+        let y = Math.floor(Math.random() * innerHeight);
+        let width = 100;
+        let height = 100;
+        let color = notes[i].color;
+        let title = notes[i].title;
+        let content = notes[i].content;
+
+        if (
+          x < 0 ||
+          x + width > innerWidth ||
+          y < 0 ||
+          y + height > innerHeight
+        ) {
+          x = Math.floor(Math.random() * innerWidth);
+          y = Math.floor(Math.random() * innerHeight);
+        }
+        if (i !== 0) {
+          for (let j = 0; j < squareArray.length; j++) {
+            const distances = getDistance(
+              x,
+              squareArray[j].x,
+              width,
+              y,
+              squareArray[j].y,
+              height
+            );
+            if (distances.distanceX1 < 0 && distances.distanceX2 < 0) {
+              x = Math.floor(Math.random() * innerWidth);
+            } else if (distances.distanceY1 < 0 && distances.distanceY2 < 0) {
+              y = Math.floor(Math.random() * innerHeight);
+
+              j = -1;
+            }
+          }
+        }
+
+        squareArray.push(
+          new Square(x, y, width, height, color, title, content)
+        );
+      }
+      animate();
+    },
+  },
+
+  note: {
+    create(square) {
+      createButton = false;
+
+      squareArray = [];
+
+      if (square.editing) {
+        square.height = 400;
+        square.width = 400;
+        square.x = innerWidth / 2 - square.width / 2;
+        square.y = innerHeight / 2 - square.height / 2;
+      } else {
+        const square = new Square(
+          innerWidth / 2 - 200,
+          innerHeight / 2 - 200,
+          400,
+          400,
+          "#fffa5c"
+        );
+      }
+      squareArray.push(square);
+      animate();
+    },
+  },
+};
+
+pages.home.create();
