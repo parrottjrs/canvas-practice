@@ -1,6 +1,11 @@
 const body = document.querySelector("body");
+
+const wrapper = document.createElement("div");
+wrapper.setAttribute("id", "wrapper");
+body.append(wrapper);
+
 const canvas = document.createElement("canvas");
-body.append(canvas);
+wrapper.append(canvas);
 canvas.width = innerWidth;
 canvas.height = innerHeight;
 const c = canvas.getContext("2d");
@@ -64,6 +69,12 @@ const hex2rgb = (hex) => {
     return "#000000";
   }
 };
+
+window.addEventListener("resize", () => {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  animate();
+});
 
 //Note Creation and Event Handling
 // objects/variables
@@ -175,17 +186,26 @@ const isOnResize = (x, y) => {
 
 // maximizes note
 
-const maximize = (square) => {
-  square.editing = true;
-  pages.note.create(square);
+const maximize = () => {
+  const quillContainer = document.createElement("div");
+  quillContainer.setAttribute("id", "quill-container");
+  wrapper.prepend(quillContainer);
+  const quillContainer2 = document.createElement("div");
+  quillContainer2.setAttribute("id", "quill-container2");
+  quillContainer.append(quillContainer2);
+  const quill = new Quill(quillContainer2, { theme: "snow" });
+  const editor = document.querySelector(".ql-toolbar.ql-snow");
+  editor.style.backgroundColor = "#fffa5c";
+  editor.style.border = "0";
 };
 
 // minimizes note
 
 const minimize = (square) => {
-  square.width = 100;
-  square.height = 100;
-  pages.home.create();
+  square.editing = false;
+  quillContainer.remove();
+  quillContainer2.remove();
+  quill;
 };
 
 // mouse event handling for note squares
@@ -214,8 +234,8 @@ const mouseUp = (event) => {
 
   if (isResizable && isInSquare(start.x, start.y)) {
     if (square.editing) {
-      minimize(square);
-    } else maximize(square);
+      minimize();
+    } else maximize();
   }
   isResizable = false;
   isDraggable = false;
@@ -260,7 +280,7 @@ canvas.onmousemove = mouseMove;
 // animate function
 
 const animate = () => {
-  requestAnimationFrame(animate);
+  const animationID = requestAnimationFrame(animate);
 
   c.clearRect(0, 0, innerWidth, innerHeight);
   c.drawImage(cork, 0, 0, innerWidth, innerHeight);
@@ -326,31 +346,5 @@ const pages = {
       animate();
     },
   },
-
-  note: {
-    create(square) {
-      createButton = false;
-
-      squareArray = [];
-
-      if (square.editing) {
-        square.height = 400;
-        square.width = 400;
-        square.x = innerWidth / 2 - square.width / 2;
-        square.y = innerHeight / 2 - square.height / 2;
-      } else {
-        const square = new Square(
-          innerWidth / 2 - 200,
-          innerHeight / 2 - 200,
-          400,
-          400,
-          "#fffa5c"
-        );
-      }
-      squareArray.push(square);
-      animate();
-    },
-  },
 };
-
 pages.home.create();
