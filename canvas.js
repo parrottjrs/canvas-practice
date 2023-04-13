@@ -77,26 +77,26 @@ function Circle(x, y, dx, dy, radius) {
 
 // moving balls around screen w/edge detection
 
-// if (this.x + this.radius > innerWidth || this.x - this.radius < 0) {
-//   this.dx = -this.dx;
-// }
-// if (this.y + this.radius > innerHeight || this.y - this.radius < 0) {
-//   this.dy = -this.dy;
-// }
-// this.x += this.dx;
-// this.y += this.dy;
-// if (
-//   mouse.x - this.x < 50 &&
-//   mouse.x - this.x > -50 &&
-//   mouse.y - this.y < 50 &&
-//   mouse.y - this.y > -50
-// ) {
-//   if (this.radius < maxRadius) {
-//     this.radius += 1;
-//   }
-// } else if (this.radius > this.minRadius) {
-//   this.radius -= 1;
-// }
+if (this.x + this.radius > innerWidth || this.x - this.radius < 0) {
+  this.dx = -this.dx;
+}
+if (this.y + this.radius > innerHeight || this.y - this.radius < 0) {
+  this.dy = -this.dy;
+}
+this.x += this.dx;
+this.y += this.dy;
+if (
+  mouse.x - this.x < 50 &&
+  mouse.x - this.x > -50 &&
+  mouse.y - this.y < 50 &&
+  mouse.y - this.y > -50
+) {
+  if (this.radius < maxRadius) {
+    this.radius += 1;
+  }
+} else if (this.radius > this.minRadius) {
+  this.radius -= 1;
+}
 
 let circleArray;
 
@@ -108,15 +108,15 @@ const init = () => {
 
   // generate multiple circles
 
-  // circleArray = [];
-  // for (let i = 0; i < 500; i++) {
-  //   var radius = Math.floor(Math.random() * 30);
-  //   var x = Math.random() * (innerWidth - radius * 2) + radius;
-  //   var y = Math.random() * (innerHeight - radius * 2) + radius;
-  //   var dx = (Math.random() - 0.5) * 5;
-  //   var dy = (Math.random() - 0.5) * 5;
-  //   circleArray.push(new Circle(x, y, dx, dy, radius));
-  // }
+  circleArray = [];
+  for (let i = 0; i < 500; i++) {
+    var radius = Math.floor(Math.random() * 30);
+    var x = Math.random() * (innerWidth - radius * 2) + radius;
+    var y = Math.random() * (innerHeight - radius * 2) + radius;
+    var dx = (Math.random() - 0.5) * 5;
+    var dy = (Math.random() - 0.5) * 5;
+    circleArray.push(new Circle(x, y, dx, dy, radius));
+  }
 };
 
 const animate = () => {
