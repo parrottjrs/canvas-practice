@@ -1,5 +1,7 @@
 # canvas-practice
 
+parrottjrs.github.io/canvas-practice/
+
 During my downtime while working on [Totes McNotes](https://github.com/parrottjrs/totes-mcnotes), I discovered html5 canvas and really dug the concept. 
 
 I spent some time watching tutorials and learned how to draw on the canvas, as well as core concepts using js.
