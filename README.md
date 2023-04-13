@@ -1,6 +1,6 @@
 # canvas-practice
 
-parrottjrs.github.io/canvas-practice/
+https://parrottjrs.github.io/canvas-practice/
 
 During my downtime while working on [Totes McNotes](https://github.com/parrottjrs/totes-mcnotes), I discovered html5 canvas and really dug the concept. 
 
